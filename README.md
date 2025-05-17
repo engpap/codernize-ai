@@ -1,0 +1,2 @@
+- improve short doc (maybe more detals??)
+- use bigger model for merge operation (looks like it's too much a summary, maybe simpliy prompt)
