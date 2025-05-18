@@ -36,13 +36,13 @@ VALID_CATEGORIES = {
     'Documentation',
     'Other'
 }
-def scan_codebase(directory: str) -> list:
+def scan_codebase(directory: str, debug: bool) -> list:
     files = []
     for root, _, filenames in os.walk(directory):
         for filename in filenames:
             if Path(filename).suffix in RELEVANT_EXTENSIONS:
                 files.append(os.path.join(root, filename))
-    # console.print(f"[cyan]Found {len(files)} relevant files in the codebase[/cyan]")
+    if debug: console.print(f"[cyan]Found {len(files)} relevant files in the codebase[/cyan]")
     return files
 
 
@@ -86,7 +86,7 @@ def categorize_file(file_path: str, file_content: str) -> str:
         return 'Other'
 
 
-def generate_short_doc(file_path: str, file_content: str, category: str) -> str:
+def generate_short_doc(file_path: str, file_content: str, category: str, debug: bool) -> str:
     if category in ["API", "Data Model", "Business Logic"]:
         sys_prompt = """
             You are a documentation expert. Given a file and its category, generate a Markdown section documentation describing the file.
@@ -145,24 +145,16 @@ def generate_short_doc(file_path: str, file_content: str, category: str) -> str:
             ],
             temperature=0.3,
         )
-        console.print(f"[cyan]Short doc generated for {file_path}[/cyan]")
+        if debug: console.print(f"[cyan]Short doc generated for {file_path}[/cyan]")
         return response.choices[0].message.content.strip()
     except Exception as e:
         console.print(f"[red]Error documenting {file_path}: {str(e)}[/red]")
         return f"// Error documenting {file_path}"
 
 
-def generate_initial_documentation() -> str:
-    return """= Project Documentation
-
-== Overview
-This document provides comprehensive documentation for the project, organized by different components and aspects.
-
-"""
-
-def generate_combined_documentation_summary(short_docs: list[str]) -> str:
+def generate_combined_documentation_summary(short_docs: list[str], debug: bool) -> str:
     """Use GPT to summarize and structure the documentation from combined short docs."""
-    console.print("[blue]Generating a documentation summary from all short docs...[/blue]")
+    if debug: console.print("[blue]Generating a documentation summary from all short docs...[/blue]")
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini", # Or other reasoning models
@@ -188,9 +180,9 @@ def generate_combined_documentation_summary(short_docs: list[str]) -> str:
 def hash_content(content: str) -> str:
     return hashlib.sha256(content.encode('utf-8')).hexdigest()
 
-def clean_up_documentation(raw_doc: str) -> str:
+def clean_up_documentation(raw_doc: str, debug: bool) -> str:
     """Use GPT to clean up and format the final Markdown content."""
-    console.print("[blue]Running final cleanup on documentation...[/blue]")
+    if debug: console.print("[blue]Running final cleanup on documentation...[/blue]")
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini", # Or other reasoning models
@@ -215,9 +207,10 @@ def clean_up_documentation(raw_doc: str) -> str:
 
 @click.command()
 @click.argument('directory', required=False, default='/Users/dre/dev/jboss-eap-quickstarts/kitchensink', type=click.Path(exists=True))
-@click.option('--output', '-o', default='docs', help='Output directory for documentation')
-@click.option('--doc-file', '-d', default='project.md', help='Name of the documentation file')
-def main(directory: str, output: str, doc_file: str):
+@click.option('--output', '-o', default='docs_1', help='Output directory for documentation')
+@click.option('--doc-file', '-doc', default='project.md', help='Name of the documentation file')
+@click.option('--debug', '-d', is_flag=True, help='Enable debug output')
+def main(directory: str, output: str, doc_file: str, debug: bool):
     """Generate and maintain documentation for a codebase."""
     if not os.getenv("OPENAI_API_KEY"):
         console.print("[red]Error: OPENAI_API_KEY environment variable not set[/red]")
@@ -230,19 +223,17 @@ def main(directory: str, output: str, doc_file: str):
     os.makedirs(output, exist_ok=True)
     doc_path = os.path.join(output, doc_file)
 
-    base_doc = generate_initial_documentation()
-    short_docs = []
-
     console.print("[yellow]Scanning codebase...[/yellow]")
-    files = scan_codebase(directory)
+    files = scan_codebase(directory, debug)
 
     if not files:
         console.print("[red]No relevant files found in the specified directory[/red]")
         return
+    
+    short_docs = []
 
     with Progress() as progress:
-        total_steps = len(files) + 2  # +1 for combination, +1 for cleanup
-        task = progress.add_task("[green]Processing documentation steps...", total=total_steps)
+        task = progress.add_task("[green]Generating documentation for files...", total=len(files))
 
         # Step 1: Short doc generation per file
         for file_path in files:
@@ -251,12 +242,12 @@ def main(directory: str, output: str, doc_file: str):
                     content = f.read()
 
                 category = categorize_file(file_path, content)
-                short_doc = generate_short_doc(file_path, content, category)
+                short_doc = generate_short_doc(file_path, content, category, debug)
 
-                # Save short doc for debugging
-                short_doc_filename = hash_content(file_path) + "_short.md"
-                with open(os.path.join(short_doc_dir, short_doc_filename), 'w', encoding='utf-8') as f:
-                    f.write(short_doc)
+                if debug: # Save short doc for debugging
+                    short_doc_filename = hash_content(file_path) + "_short.md"
+                    with open(os.path.join(short_doc_dir, short_doc_filename), 'w', encoding='utf-8') as f:
+                        f.write(short_doc)
 
                 short_docs.append(short_doc)
                 progress.update(task, advance=1)
@@ -266,18 +257,19 @@ def main(directory: str, output: str, doc_file: str):
                 progress.update(task, advance=1)  # Still advance to not block progress bar
                 continue
 
-        # Step 2: Combine documentation
-        combined_doc = generate_combined_documentation_summary(short_docs)
+    # Step 2: Combine documentation
+    console.print("[blue]Combining documentation snippets into a single document...[/blue]")
+    combined_doc = generate_combined_documentation_summary(short_docs, debug)
+    if debug:
         raw_doc_debug_path = os.path.join(debug_dir, 'raw_' + doc_file)
         with open(raw_doc_debug_path, 'w', encoding='utf-8') as f:
             f.write(combined_doc)
-        progress.update(task, advance=1)
 
-        # Step 3: Clean up final doc
-        cleaned_doc = clean_up_documentation(combined_doc)
-        with open(doc_path, 'w', encoding='utf-8') as f:
-            f.write(cleaned_doc)
-        progress.update(task, advance=1)
+    # Step 3: Clean up final doc
+    console.print("[blue]Cleaning up final documentation...[/blue]")
+    cleaned_doc = clean_up_documentation(combined_doc, debug)
+    with open(doc_path, 'w', encoding='utf-8') as f:
+        f.write(cleaned_doc)
 
     console.print(f"[green]Documentation saved to '{doc_path}'[/green]")
 
