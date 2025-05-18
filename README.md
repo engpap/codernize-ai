@@ -1,13 +1,13 @@
 # Codernize AI
 
-## Overview
+### Overview
 
 This project contains two tools for modernizing Java projects:
 
 - DocGen: Generates documentation for a project.
 - ModGen: Generates a modernization report for a project.
 
-## Design Document
+### Design Document
 You can find the design document [here](./design-doc.pdf).
 ### Set Up
 Make sure you set the OPENAI_API_KEY environment variable before running the script. You can do this by running the following command in your terminal:
