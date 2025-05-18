@@ -207,7 +207,7 @@ def clean_up_documentation(raw_doc: str, debug: bool) -> str:
 
 @click.command()
 @click.argument('directory', required=False, default='/Users/dre/dev/jboss-eap-quickstarts/kitchensink', type=click.Path(exists=True))
-@click.option('--output', '-o', default='docs_1', help='Output directory for documentation')
+@click.option('--output', '-o', default='docs', help='Output directory for documentation')
 @click.option('--doc-file', '-doc', default='project.md', help='Name of the documentation file')
 @click.option('--debug', '-d', is_flag=True, help='Enable debug output')
 def main(directory: str, output: str, doc_file: str, debug: bool):
