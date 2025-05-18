@@ -9,14 +9,15 @@ This project contains two tools for modernizing Java projects:
 
 ### Design Document
 You can find the design document [here](./design-doc.pdf).
+
+## DocGen
+
 ### Set Up
 Make sure you set the OPENAI_API_KEY environment variable before running the script. You can do this by running the following command in your terminal:
 
 ```bash
 export OPENAI_API_KEY=<your_openai_api_key>
 ```
-
-## DocGen
 
 ### Usage
 To run the documentation generation script, use the following command:
@@ -37,6 +38,14 @@ python3 doc-gen.py /Users/dre/dev/jboss-eap-quickstarts/kitchensink -o out_docs 
 
 
 ## ModGen
+
+### Set Up
+Make sure you set the OPENAI_API_KEY environment variable before running the script. You can do this by running the following command in your terminal:
+
+```bash
+export OPENAI_API_KEY=<your_openai_api_key>
+```
+
 ### Usage
 To generate a modernization report, use the following command:
 
