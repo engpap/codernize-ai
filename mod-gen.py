@@ -13,11 +13,20 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 console = Console(width=200, force_terminal=True)
 
+RELEVANT_EXTENSIONS = {
+    '.java',        # Core source code: classes, controllers, services, models, etc.
+    '.xml',         # Configuration files (e.g., Spring beans, persistence.xml, pom.xml)
+    '.properties',  # Application settings (e.g., key-value configs for environments)
+    '.yml',         # YAML configuration (e.g., Spring Boot configs)
+    '.yaml',        # Same as .yml, alternate YAML extension
+    '.sql',         # Database schema definitions or migration scripts
+}
+
 def scan_codebase(directory: str, debug: bool) -> list:
     files = []
     for root, _, filenames in os.walk(directory):
         for filename in filenames:
-            if Path(filename).suffix == '.java':
+            if Path(filename).suffix in RELEVANT_EXTENSIONS:
                 files.append(os.path.join(root, filename))
     if debug: console.print(f"[cyan]Found {len(files)} relevant files in the codebase[/cyan]")
     return files
@@ -134,7 +143,8 @@ def main(doc_file: str, repo_directory: str, output: str, modernization_report_f
             analyses.append(f"## Analysis for {file_path}\n\n{analysis}")
             progress.update(task, advance=1)
     
-    generate_modernization_report(analyses, modernization_report_file, debug)
+    report_path = os.path.join(output, modernization_report_file)
+    generate_modernization_report(analyses, report_path, debug)
 
 if __name__ == '__main__':
     main()
