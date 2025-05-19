@@ -11,6 +11,12 @@ This project contains three tools for generating documentation, modernization re
 ## Design Document
 You can find the design document [here](./design-doc.pdf).
 
+## Use of GenAI
+GenAI was used in multiple ways throughout this project:
+- As a coding assistant, to generate boilerplate code and help bootstrap the initial setup of the project.
+- Through the OpenAI API, which is integrated directly into the tools themselves (DocGen, ModGen, and DiagGen) to generate documentation, modernization reports, and system diagrams.
+- For prompt engineering, to refine and improve the quality of the prompts used by the tools via the APIs.
+
 ### Set Up
 Make sure you set the OPENAI_API_KEY environment variable before running the scripts. You can do this by running the following command in your terminal:
 
@@ -54,7 +60,7 @@ Where:
 
 Example:
 ```bash
-python3 mod-gen.py /Users/dre/dev/interview/codernize-ai/docs/output.md /Users/dre/dev/jboss-eap-quickstarts/kitchensink -o docs -report modernization-report.md -d
+python3 mod-gen.py /Users/dre/dev/codernize-ai/docs/output.md /Users/dre/dev/jboss-eap-quickstarts/kitchensink -o docs -report modernization-report.md -d
 ```
 
 ## DiagGen
