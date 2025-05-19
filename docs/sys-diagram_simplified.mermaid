@@ -1,0 +1,59 @@
+```mermaid
+flowchart TD
+  subgraph Kitchensink Quickstart System
+    direction TB
+
+    %% Core Source Code Components
+    subgraph Source_Code["Source Code"]
+      direction TB
+      Member[Member Class]
+      MemberRepository[MemberRepository]
+      MemberRegistration[MemberRegistration]
+      MemberController[MemberController]
+      MemberResourceRESTService[MemberResourceRESTService]
+      EntityManager[EntityManager]
+      Logger[Logger]
+      Event[Event<Member>]
+      Validator[Validator]
+
+      MemberRepository -->|Uses| EntityManager
+      MemberRegistration -->|Injects| Logger
+      MemberRegistration -->|Uses| EntityManager
+      MemberRegistration -->|Fires| Event
+      MemberController -->|Calls| MemberRegistration
+      MemberResourceRESTService -->|Uses| MemberRepository
+      MemberResourceRESTService -->|Uses| MemberRegistration
+      MemberResourceRESTService -->|Uses| Logger
+      MemberResourceRESTService -->|Uses| Validator
+    end
+
+    %% Web Layer
+    subgraph Web_Layer["Web Layer"]
+      direction TB
+      IndexXHTML[index.xhtml]
+      MemberControllerWeb[MemberController]
+      REST_API[REST API]
+
+      IndexXHTML -->|User Interaction| MemberControllerWeb
+      MemberControllerWeb -->|Calls| MemberRegistration
+      REST_API -->|Exposes| MemberResourceRESTService
+    end
+
+    %% Persistence Layer
+    subgraph Persistence_Layer["Persistence Layer"]
+      persistenceXML[persistence.xml]
+      Datasource[Datasource: KitchensinkQuickstartDS]
+
+      persistenceXML --> Datasource
+      MemberRepository -->|Uses| EntityManager
+    end
+
+    %% Build & Config
+    subgraph Build_Configuration["Build & Config"]
+      pomXML[pom.xml]
+      pomXML -->|Configures| MemberRegistration
+      pomXML -->|Configures| MemberResourceRESTService
+    end
+
+  end
+```

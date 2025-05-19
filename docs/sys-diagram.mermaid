@@ -1,0 +1,297 @@
+```mermaid
+flowchart TD
+  %% Top-level system grouping
+  subgraph Kitchensink Quickstart System
+    direction TB
+
+    %% Source Code Layer
+    subgraph Source_Code["Source Code (src/main/java)"]
+      direction TB
+
+      subgraph Model_Pkg["org.jboss.as.quickstarts.kitchensink.model"]
+        Member[Member Class]
+        Member_["Member_ Class (Generated)"]
+        Member_ -->|Represents| Member
+      end
+
+      subgraph Data_Pkg["org.jboss.as.quickstarts.kitchensink.data"]
+        MemberRepository[MemberRepository]
+        MemberListProducer[MemberListProducer]
+        MemberListProducer -->|Injects| MemberRepository
+        MemberListProducer -->|Produces List<Member>| MemberList
+        MemberListProducer -->|Observes Member changes| Member
+        MemberRepository -->|Injects| EntityManager[EntityManager]
+      end
+
+      subgraph Service_Pkg["org.jboss.as.quickstarts.kitchensink.service"]
+        MemberRegistration[MemberRegistration]
+        MemberRegistration -->|Injects| Logger[Logger]
+        MemberRegistration -->|Injects| EntityManager
+        MemberRegistration -->|Injects| Event[Event<Member>]
+        MemberRegistration -->|register(Member)| Member
+      end
+
+      subgraph Controller_Pkg["org.jboss.as.quickstarts.kitchensink.controller"]
+        MemberController[MemberController]
+        MemberController -->|Injects| FacesContext[FacesContext]
+        MemberController -->|Injects| MemberRegistration
+        MemberController -->|Produces| Member
+        MemberController -->|Calls| register_method["register() method"]
+        MemberController -->|Calls| initNewMember["initNewMember() method"]
+        register_method -->|Calls| MemberRegistration
+      end
+
+      subgraph Util_Pkg["org.jboss.as.quickstarts.kitchensink.util"]
+        Resources[Resources Class]
+        Resources -->|Provides| EntityManager
+        Resources -->|Provides| Logger
+      end
+
+      subgraph REST_Pkg["org.jboss.as.quickstarts.kitchensink.rest"]
+        JaxRsActivator[JaxRSActivator]
+        MemberResourceRESTService[MemberResourceRESTService]
+        MemberResourceRESTService -->|Injects| Logger
+        MemberResourceRESTService -->|Injects| Validator
+        MemberResourceRESTService -->|Injects| MemberRepository
+        MemberResourceRESTService -->|Injects| MemberRegistration
+        MemberResourceRESTService -->|Defines REST endpoints| REST_Methods[REST Methods]
+        JaxRsActivator -->|Activates JAX-RS endpoints| MemberResourceRESTService
+      end
+    end
+
+    %% Web Layer (src/main/webapp)
+    subgraph Web_Layer["Web Layer (src/main/webapp)"]
+      direction TB
+
+      subgraph Templates["Templates"]
+        DefaultTemplate[default.xhtml Template]
+        DefaultTemplate --> JSF_Components[JSF Components]
+        JSF_Components --> Head[h:head]
+        JSF_Components --> Body[h:body]
+        Body --> ContainerDiv
+        ContainerDiv --> BrandLogo
+        ContainerDiv --> ContentSection
+        ContentSection --> UIInsert[ui:insert]
+        ContainerDiv --> AsideSection
+        AsideSection --> LinksInfo
+        ContainerDiv --> FooterSection
+        FooterSection --> FooterText
+      end
+
+      subgraph Views["Views"]
+        IndexXHTML[index.xhtml]
+        IndexXHTML -->|User Interaction| UserInput[User Interaction]
+        UserInput --> MemberControllerWeb[MemberController]
+        MemberControllerWeb --> MemberModel[Member Model]
+        MemberControllerWeb --> REST_API[REST API Endpoint]
+      end
+
+      subgraph Web_INF["WEB-INF"]
+        BeansXML_Web[beans.xml (CDI config)]
+        FacesConfig_Web[faces-config.xml]
+        FacesConfig_Web --> JSF_Framework[JSF Framework]
+        JSF_Framework --> ManagedBeans
+        ManagedBeans --> NavigationRules
+        NavigationRules --> UI_XHTML[User Interface (XHTML)]
+        DatasourceConfig[Datasource Config: kitchensink-quickstart-ds.xml]
+        DatasourceConfig --> Datasource[Datasource: KitchensinkQuickstartDS]
+        Datasource --> ConnectionURL
+        Datasource --> Driver
+        Datasource --> Security
+        PersistenceLayer --> PersistenceXML_MetaInf
+        PersistenceLayer --> Datasource
+      end
+    end
+
+    %% Persistence Layer (META-INF)
+    subgraph Persistence_Layer["Persistence Layer (META-INF)"]
+      PersistenceXML_MetaInf[persistence.xml]
+      PersistenceXML_MetaInf --> PersistenceUnit[Persistence Unit: primary]
+      PersistenceUnit --> JTADataSource[java:jboss/datasources/KitchensinkQuickstartDS]
+      PersistenceUnit --> HibernateProps[Hibernate Properties]
+      HibernateProps --> hbm2ddl[hibernate.hbm2ddl.auto: create-drop]
+      HibernateProps --> show_sql[hibernate.show_sql: false]
+    end
+
+    %% Test Resources Layer
+    subgraph Test_Resources["Test Resources (src/test/resources)"]
+      TestDS[test-ds.xml]
+      TestDS --> DatasourceTest[Datasource]
+      DatasourceTest --> H2Driver[H2 Driver]
+      DatasourceTest --> ConnectionURLTest
+      DatasourceTest --> SecurityCredsTest
+      SecurityCredsTest --> UserNameTest
+      SecurityCredsTest --> PasswordTest
+      DatasourceTest --> JNDINameTest[java:jboss/datasources/KitchensinkQuickstartTestDS]
+      JNDINameTest --> TestPersistenceXML
+      TestPersistenceXML[test-persistence.xml]
+      TestPersistenceXML --> PersistenceUnitTest[Persistence Unit: primary]
+      PersistenceUnitTest --> JTADataSourceTest[java:jboss/datasources/KitchensinkQuickstartTestDS]
+      PersistenceUnitTest --> HibernatePropsTest
+      HibernatePropsTest --> hbm2ddlTest[hibernate.hbm2ddl.auto = create-drop]
+      HibernatePropsTest --> show_sqlTest[hibernate.show_sql = false]
+      ArquillianXML[arquillian.xml]
+      ArquillianXML --> ContainerElement
+      ContainerElement --> JBossEAPContainer
+      ContainerElement --> PropertyElement
+      PropertyElement --> ConfigProperties
+      JBossEAPContainer --> EnvVariables
+      EnvVariables -->|Uses| JBossEAPContainer
+    end
+
+    %% Test Code Layer
+    subgraph Test_Code["Test Code (src/test/java)"]
+      MemberRegistrationIT[MemberRegistrationIT Class]
+      MemberRegistrationIT --> createTestArchive["createTestArchive() Method"]
+      MemberRegistrationIT --> testRegisterMethod["testRegister() Method"]
+      createTestArchive --> MemberClassTest[Member Class]
+      createTestArchive --> MemberRegistrationClassTest[MemberRegistration Class]
+      createTestArchive --> ResourcesClassTest[Resources Class]
+      createTestArchive --> PersistenceDeploymentResources
+      testRegisterMethod --> MemberObject
+      testRegisterMethod --> MemberRegistrationClassTest
+      testRegisterMethod --> LoggerInjected
+      MemberRegistrationClassTest --> MemberClassTest
+      MemberRegistrationClassTest --> PersistenceDeploymentResources
+      LoggerInjected --> MemberRegistrationIT
+      PersistenceDeploymentResources --> createTestArchive
+      PersistenceDeploymentResources --> testRegisterMethod
+
+      RemoteMemberRegistrationIT[RemoteMemberRegistrationIT Class]
+      RemoteMemberRegistrationIT --> getHTTPEndpointMethod
+      RemoteMemberRegistrationIT --> getServerHostMethod
+      RemoteMemberRegistrationIT --> testRegisterRemoteMethod
+      testRegisterRemoteMethod --> MemberClassRemote
+      testRegisterRemoteMethod --> JsonObjectCreation
+      testRegisterRemoteMethod --> HttpRequestConstruction
+      HttpRequestConstruction --> HttpClientSendRequest
+      HttpClientSendRequest --> HttpResponseHandling
+      HttpResponseHandling --> Assertions
+      MemberClassRemote -- used in --> JsonObjectCreation
+      MemberClassRemote -- used in --> testRegisterRemoteMethod
+    end
+
+    %% Build and Configuration Layer
+    subgraph Build_Configuration["Build & Config"]
+      pomXML[pom.xml]
+      pomXML --> ParentPom
+      pomXML --> Artifact
+      pomXML --> Dependencies
+      pomXML --> Plugins
+      pomXML --> Profiles
+      pomXML --> Repositories
+      pomXML --> Build
+      pomXML --> Properties
+      pomXML --> Licenses
+      pomXML --> Description
+      pomXML --> Name
+      pomXML --> Packaging
+      pomXML --> ArtifactId
+      pomXML --> Version
+    end
+
+    %% Code Quality Layer
+    subgraph Code_Quality["Code Quality & Style"]
+      CheckstyleResult[Checkstyle Result]
+      CheckstyleResult --> XMLFile
+      XMLFile --> VersionAttribute
+      VersionAttribute --> CheckstyleVersion["Checkstyle Version 8.5"]
+
+      CheckstyleChecker[Checker Module]
+      CheckstyleChecker --> FileTabCharacter
+      CheckstyleChecker --> RegexpSingleline
+      CheckstyleChecker --> TreeWalker
+      TreeWalker --> AvoidStarImport
+      TreeWalker --> RedundantImport
+      TreeWalker --> UnusedImports
+      TreeWalker --> IllegalImport
+      TreeWalker --> ModifierOrder
+      TreeWalker --> RedundantModifier
+      TreeWalker --> LeftCurly
+      TreeWalker --> EmptyStatement
+      TreeWalker --> IllegalInstantiation
+      TreeWalker --> UpperEll
+      TreeWalker --> PackageAnnotation
+      TreeWalker --> ArrayTypeStyle
+      TreeWalker --> SuppressWarningsHolder
+      TreeWalker --> SuppressWarnings
+      SuppressWarnings --> SuppressWarningsFilter
+      CheckstyleChecker --> SuppressionFilter
+      SuppressionFilter --> WildflySuppressions["/wildfly-checkstyle/suppressions.xml"]
+    end
+
+    %% SQL Seed Data Layer
+    subgraph SQL_Seed_Data["SQL Seed Data"]
+      ImportSQL_src[import.sql (src/main/resources)]
+      ImportSQL_src --> SQLSeedData_src
+      SQLSeedData_src --> InsertMemberData_src
+      InsertMemberData_src --> MemberTable_src
+
+      ImportSQL_classes[import.sql (target/classes)]
+      ImportSQL_classes --> SQLSeedData_classes
+      SQLSeedData_classes --> InsertMemberData_classes
+      InsertMemberData_classes --> MemberTable_classes
+    end
+
+    %% Relationships across layers
+
+    %% Source Code to Persistence
+    MemberRepository -->|Uses| EntityManager
+    Resources -->|Provides EntityManager| MemberRepository
+    MemberRegistration -->|Persists Member| EntityManager
+    MemberRegistration -->|Fires Event| Event
+    MemberListProducer -->|Produces Member List| MemberList
+    MemberListProducer -->|Observes Member Changes| Member
+    MemberController -->|Calls| MemberRegistration
+    MemberController -->|Produces| Member
+    MemberResourceRESTService -->|Uses| MemberRepository
+    MemberResourceRESTService -->|Uses| MemberRegistration
+    MemberResourceRESTService -->|Uses| Validator
+    JaxRsActivator -->|Activates REST| MemberResourceRESTService
+
+    %% Web Layer to Source Code
+    MemberControllerWeb -->|Calls| MemberRegistration
+    IndexXHTML -->|Calls| MemberControllerWeb
+    REST_API -->|Exposes REST endpoints| MemberResourceRESTService
+
+    %% Persistence Layer to Datasource
+    PersistenceUnit -->|Uses| Datasource
+    Datasource -->|Configured by| DatasourceConfig
+
+    %% Test Resources to Test Persistence
+    DatasourceTest -->|Used by| TestPersistenceXML
+    TestPersistenceXML -->|Defines| PersistenceUnitTest
+
+    %% Test Code to Source Code
+    MemberRegistrationIT -->|Tests| MemberRegistration
+    RemoteMemberRegistrationIT -->|Tests| MemberResourceRESTService
+
+    %% Build & Config to Source Code and REST
+    pomXML -->|Configures dependencies for| MemberResourceRESTService
+    pomXML -->|Configures build for| JaxRsActivator
+    pomXML -->|Configures build for| MemberRegistration
+
+    %% Code Quality to Source Code
+    CheckstyleChecker -->|Checks style of| MemberController
+    CheckstyleChecker -->|Checks style of| MemberRegistration
+
+  end
+
+  %% Legend
+  classDef pkg fill:#bbf,stroke:#333,stroke-width:1px,color:#000,font-weight:bold;
+  classDef component fill:#ccf,stroke:#333,stroke-width:1px,color:#000;
+  classDef method fill:#cff,stroke:#333,stroke-width:1px,color:#000,font-style:italic;
+  classDef config fill:#fcf,stroke:#333,stroke-width:1px,color:#000;
+  classDef test fill:#cfc,stroke:#333,stroke-width:1px,color:#000;
+  classDef sql fill:#fbb,stroke:#333,stroke-width:1px,color:#000;
+  classDef quality fill:#f9f,stroke:#333,stroke-width:1px,color:#000;
+
+  class Source_Code,Model_Pkg,Data_Pkg,Service_Pkg,Controller_Pkg,Util_Pkg,REST_Pkg pkg;
+  class Web_Layer,Templates,Views,Web_INF pkg;
+  class Persistence_Layer pkg;
+  class Test_Resources,test;
+  class Test_Code,test;
+  class Build_Configuration,config;
+  class Code_Quality,quality;
+  class SQL_Seed_Data,sql;
+```
