@@ -5,8 +5,6 @@ from rich.console import Console
 from rich.progress import Progress
 from openai import OpenAI
 from dotenv import load_dotenv
-import hashlib
-import re
 
 load_dotenv()
 
@@ -20,6 +18,8 @@ RELEVANT_EXTENSIONS = {
     '.yml',         # YAML configuration (e.g., Spring Boot configs)
     '.yaml',        # Same as .yml, alternate YAML extension
     '.sql',         # Database schema definitions or migration scripts
+    '.xhtml',
+    '.html',
 }
 
 def scan_codebase(directory: str, debug: bool) -> list:

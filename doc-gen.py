@@ -21,7 +21,9 @@ RELEVANT_EXTENSIONS = {
     '.yaml',        # Same as .yml, alternate YAML extension
     '.sql',         # Database schema definitions or migration scripts
     '.md',          # Markdown documentation (README, CONTRIBUTING, etc.)
-    '.adoc'         # AsciiDoc documentation files (project guides, architecture docs_v0)
+    '.adoc',        # AsciiDoc documentation files (project guides, architecture docs_v0)
+    '.xhtml',
+    '.html',
 }
 
 VALID_CATEGORIES = {
