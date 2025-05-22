@@ -1,0 +1,144 @@
+```mermaid
+flowchart TD
+  %% Top-level system
+  subgraph Kitchensink_Quickstart_System
+    direction TB
+
+    %% Source Code Layer
+    subgraph Source_Code
+      direction TB
+
+      subgraph Model_Package
+        direction LR
+        Member["Member.java\n- id, name, email, phoneNumber\n- Validation Annotations"]
+        Member_["Member_.java (Static Metamodel)"]
+        Member --> Member_
+      end
+
+      subgraph Data_Package
+        direction LR
+        MemberRepository["MemberRepository\n- Injects EntityManager\n- Criteria API Queries"]
+        MemberListProducer["MemberListProducer\n- Produces List<Member>\n- Observes Member changes"]
+        MemberRepository --> MemberListProducer
+      end
+
+      subgraph Service_Package
+        direction LR
+        MemberRegistration["MemberRegistration\n- Injects Logger, EntityManager, Event<Member>\n- register(Member)"]
+      end
+
+      subgraph Controller_Package
+        direction LR
+        MemberController["MemberController\n- Injects FacesContext, MemberRegistration\n- Produces newMember\n- Handles register()"]
+      end
+
+      subgraph REST_Package
+        direction LR
+        JaxRsActivator["JaxRsActivator\n- Extends Application\n- @ApplicationPath('/rest')"]
+        MemberResourceRESTService["MemberResourceRESTService\n- Uses Logger, Validator\n- Uses MemberRepository, MemberRegistration\n- REST endpoints: listAllMembers(), lookupMemberById(id), createMember(member)"]
+        JaxRsActivator --> MemberResourceRESTService
+      end
+
+      %% Relationships between components
+      Member -->|Entity & JAXB| MemberRepository
+      Member -->|Constraints| MemberRegistration
+      MemberRepository -->|Persistence Layer| MemberRegistration
+      MemberRepository -->|Injects EntityManager| MemberListProducer
+      MemberListProducer -->|Produces Member List| MemberController
+      MemberRegistration -->|Transactional| MemberController
+      MemberController -->|JSF Interaction| JaxRsActivator
+      MemberResourceRESTService -->|Injects| MemberRepository
+      MemberResourceRESTService -->|Injects| MemberRegistration
+      MemberResourceRESTService -->|Validation| Member
+      MemberResourceRESTService -->|Uses CDI| Resources["Resources.java"]
+      MemberResourceRESTService -->|Uses CDI| MemberRepository
+      MemberResourceRESTService -->|Uses CDI| MemberRegistration
+
+      %% Resources class
+      Resources -->|Injects| EntityManager["EntityManager"]
+      Resources -->|Produces| Logger["Logger"]
+
+    end
+
+    %% Web Layer
+    subgraph Web_Layer
+      direction TB
+
+      subgraph JSF_Frontend
+        direction TB
+        IndexXHTML["index.xhtml\n- User Interaction\n- Member Registration Form\n- Members List\n- REST API Endpoint"]
+        DefaultXHTML["default.xhtml Template\n- UI Components\n- Header, Aside, Footer Sections"]
+        FacesConfig["faces-config.xml\n- JSF Framework\n- Faces Servlet\n- Managed Beans\n- Navigation Rules"]
+        BeansXML["beans.xml\n- Enables CDI"]
+      end
+
+      IndexXHTML --> MemberController
+      MemberController --> FacesConfig
+      DefaultXHTML -->|UI Components| IndexXHTML
+      BeansXML -->|Enables| CDI["CDI Container"]
+
+    end
+
+    %% Persistence Layer
+    subgraph Persistence_Layer
+      direction TB
+      PersistenceXML["persistence.xml\n- Defines Persistence Unit: primary\n- JTA Data Source\n- Hibernate Properties"]
+      DatasourceXML["kitchensink-quickstart-ds.xml\n- Datasource Configuration\n- JNDI Name: java:jboss/datasources/KitchensinkQuickstartDS\n- H2 Driver\n- Security Credentials"]
+      ImportSQL["import.sql\n- SQL Seed Data for Member Table"]
+
+      PersistenceXML --> DatasourceXML
+      DatasourceXML --> JNDI["JNDI Registry"]
+      JNDI --> PersistenceXML
+      ImportSQL --> PersistenceXML
+    end
+
+    %% Testing Layer
+    subgraph Testing_Layer
+      direction TB
+      ArquillianXML["arquillian.xml\n- Container Configuration\n- Qualifier: jboss\n- Default: true"]
+      TestDSXML["test-ds.xml\n- Datasource for Testing\n- JNDI Name: java:jboss/datasources/KitchensinkQuickstartTestDS"]
+      TestPersistenceXML["test-persistence.xml\n- Persistence Unit for Testing\n- Uses TestDS"]
+      RemoteMemberRegistrationIT["RemoteMemberRegistrationIT\n- HTTP Client Testing\n- Uses Member Class"]
+      MemberRegistrationIT["MemberRegistrationIT\n- Arquillian Test\n- Uses ShrinkWrap, Resources, JUnit\n- Tests MemberRegistration"]
+
+      ArquillianXML --> RemoteMemberRegistrationIT
+      ArquillianXML --> MemberRegistrationIT
+      TestDSXML --> TestPersistenceXML
+      TestPersistenceXML --> MemberRegistrationIT
+      TestDSXML --> RemoteMemberRegistrationIT
+    end
+
+    %% Build and Project Metadata
+    subgraph Build_Metadata
+      direction TB
+      MavenProject["pom.xml\n- Project Metadata\n- Dependencies\n- Plugins\n- Profiles\n- Repositories"]
+    end
+
+    %% Checkstyle Configuration and Results
+    subgraph Code_Quality
+      direction TB
+      CheckstyleChecker["checkstyle-checker.xml\n- Rules and Filters"]
+      CheckstyleResult["checkstyle-result.xml\n- Results XML"]
+      CheckstyleChecker --> CheckstyleResult
+    end
+
+  end
+
+  %% Legend
+  classDef package fill:#bbf,stroke:#333,stroke-width:2px,color:#000,font-weight:bold
+  classDef component fill:#ccf,stroke:#333,stroke-width:1px,color:#000
+  class Kitchensink_Quickstart_System package
+  class Source_Code package
+  class Web_Layer package
+  class Persistence_Layer package
+  class Testing_Layer package
+  class Build_Metadata package
+  class Code_Quality package
+
+  class Member,Member_,MemberRepository,MemberListProducer,MemberRegistration,MemberController,MemberResourceRESTService,JaxRsActivator,Resources component
+  class IndexXHTML,DefaultXHTML,FacesConfig,BeansXML,CDI component
+  class PersistenceXML,DatasourceXML,ImportSQL,JNDI component
+  class ArquillianXML,TestDSXML,TestPersistenceXML,RemoteMemberRegistrationIT,MemberRegistrationIT component
+  class MavenProject component
+  class CheckstyleChecker,CheckstyleResult component
+```

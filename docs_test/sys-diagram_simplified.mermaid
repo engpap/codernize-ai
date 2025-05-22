@@ -1,0 +1,60 @@
+```mermaid
+flowchart TD
+  subgraph Kitchensink_Quickstart_System
+    direction TB
+
+    %% Core Source Code
+    subgraph Source_Code
+      direction TB
+
+      Member["Member.java\n(Entity)"]
+      MemberRepository["MemberRepository\n(Persistence)"]
+      MemberRegistration["MemberRegistration\n(Business Logic)"]
+      MemberController["MemberController\n(JSF Controller)"]
+      MemberResourceRESTService["MemberResourceRESTService\n(REST API)"]
+      JaxRsActivator["JaxRsActivator\n(REST Activator)"]
+
+      Member --> MemberRepository
+      MemberRepository --> MemberRegistration
+      MemberRegistration --> MemberController
+      MemberController --> JaxRsActivator
+      JaxRsActivator --> MemberResourceRESTService
+      MemberResourceRESTService --> MemberRepository
+      MemberResourceRESTService --> MemberRegistration
+    end
+
+    %% Web Layer
+    subgraph Web_Layer
+      direction TB
+
+      IndexXHTML["index.xhtml\n(User UI)"]
+      FacesConfig["faces-config.xml\n(JSF Config)"]
+      BeansXML["beans.xml\n(CDI Enable)"]
+
+      IndexXHTML --> MemberController
+      MemberController --> FacesConfig
+      BeansXML --> CDI["CDI Container"]
+    end
+
+    %% Persistence Layer
+    subgraph Persistence_Layer
+      direction TB
+
+      PersistenceXML["persistence.xml\n(Persistence Unit)"]
+      DatasourceXML["kitchensink-quickstart-ds.xml\n(Datasource Config)"]
+
+      PersistenceXML --> DatasourceXML
+    end
+
+  end
+
+  classDef package fill:#bbf,stroke:#333,stroke-width:2px,color:#000,font-weight:bold
+  classDef component fill:#ccf,stroke:#333,stroke-width:1px,color:#000
+
+  class Kitchensink_Quickstart_System package
+  class Source_Code,Web_Layer,Persistence_Layer package
+
+  class Member,MemberRepository,MemberRegistration,MemberController,MemberResourceRESTService,JaxRsActivator component
+  class IndexXHTML,FacesConfig,BeansXML,CDI component
+  class PersistenceXML,DatasourceXML component
+```
